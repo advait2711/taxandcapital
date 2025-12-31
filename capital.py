@@ -73,7 +73,7 @@ with tab1:
         if holding_period.days <= 365:
             # Short-Term Capital Gain (STCG)
             stcg = sale_price_eq - purchase_price_eq
-            tax_rate = 0.20 # From your image
+            tax_rate = 0.20 
             final_tax = stcg * tax_rate
             
             st.metric(label=f"Holding Period: {holding_period.days} days (Short-Term)", value=f"STCG: ₹{stcg:,.2f}")
@@ -89,8 +89,8 @@ with tab1:
                 st.caption(f"Grandfathering applied. Cost of acquisition is ₹{cost_of_acquisition:,.2f} (Higher of actual cost and (lower of FMV or sale price))")
 
             ltcg = sale_price_eq - cost_of_acquisition
-            taxable_ltcg = max(0, ltcg - 125000) # Exemption from your image
-            tax_rate = 0.125 # From your image
+            taxable_ltcg = max(0, ltcg - 125000) 
+            tax_rate = 0.125 
             final_tax = taxable_ltcg * tax_rate
 
             st.metric(label=f"Holding Period: {holding_period.days} days (Long-Term)", value=f"LTCG: ₹{ltcg:,.2f}")
@@ -122,7 +122,7 @@ with tab2:
     """)
 
     MIN_PURCHASE_DATE = datetime.date(1970, 1, 1) 
-    BASE_CII_START_DATE = datetime.date(2001, 4, 1) # Start of FY 2001-02
+    BASE_CII_START_DATE = datetime.date(2001, 4, 1) 
 
     # --- Section 1: Purchase Details (Outside Form) ---
     st.subheader("1. Enter Purchase Details")
@@ -132,17 +132,17 @@ with tab2:
             "Purchase Price (Cost)", 
             min_value=0.0, 
             value=2000000.0,
-            key="purchase_price_prop" # Key for form to read
+            key="purchase_price_prop" 
         )
         
     with p_col2:
         current_purchase_date = st.date_input(
             "Purchase Date", 
-            datetime.date(2015, 6, 1), # Default value
+            datetime.date(2015, 6, 1), 
             min_value=MIN_PURCHASE_DATE,
             max_value=datetime.date.today(),
             help="Used to determine holding period and CII.",
-            key="purchase_date_widget" # Key for form to read
+            key="purchase_date_widget" 
         )
         
     # Live CII display for Purchase
@@ -165,7 +165,7 @@ with tab2:
             "Sale Price (Full Value)", 
             min_value=0.0, 
             value=5000000.0,
-            key="sale_price_prop" # Key for form to read
+            key="sale_price_prop" 
         )
         
     with s_col2:
@@ -173,7 +173,7 @@ with tab2:
             "Date of Sale", 
             datetime.date(2025, 6, 1), 
             help="Used to determine holding period and CII.",
-            key="sale_date_widget" # Key for form to read
+            key="sale_date_widget" 
         )
 
     # Live CII display for Sale
@@ -234,7 +234,7 @@ with tab2:
             # Option 2: 20% with indexation
             try:
                 if final_purchase_date < BASE_CII_START_DATE:
-                    cii_purchase = 100  # Use base index (100)
+                    cii_purchase = 100  
                 else:
                     calc_purchase_year = get_financial_year(final_purchase_date)
                     cii_purchase = CII[calc_purchase_year]
@@ -286,7 +286,7 @@ with tab2:
                     st.subheader("Option 2: 12.5% (No Indexation)")
                     st.caption("No indexation benefit is applied.")
                     if cost_of_improvement > 0:
-                         st.caption(" ") # To align
+                         st.caption(" ") 
                     st.metric(label="Taxable Gain", value=f"₹{gain_no_index:,.2f}")
                     st.metric(label="Final Tax @ 12.5%", value=f"₹{tax_no_index:,.2f}")
             
@@ -334,7 +334,7 @@ with tab3:
         else:
             # Long-Term Capital Gain (LTCG)
             ltcg = sale_price_other - purchase_price_other
-            tax_rate = 0.125 # From your image
+            tax_rate = 0.125 
             final_tax = ltcg * tax_rate
             
             st.success("This is a Long-Term Capital Gain (LTCG)")
