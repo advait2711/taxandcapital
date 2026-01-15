@@ -252,7 +252,7 @@ def calculate_tds(amount: float, rate: Optional[float], threshold: Optional[floa
     
     # Check if amount exceeds threshold
     if threshold is not None and amount < threshold:
-        return 0, False  # Below threshold, no TDS
+        return 0, False  
     
     tds_amount = amount * (rate / 100)
     return round(tds_amount, 2), True
@@ -300,7 +300,7 @@ def calculate_interest(tds_amount: float, deduction_date: date, payment_date: da
     deduction_month = deduction_date.month + (deduction_date.year * 12)
     payment_month = payment_date.month + (payment_date.year * 12)
     
-    months = payment_month - deduction_month + 1
+    months = payment_month - deduction_month 
     
     # Interest @ 1.5% per month
     interest = tds_amount * 0.015 * months
@@ -310,9 +310,9 @@ def calculate_interest(tds_amount: float, deduction_date: date, payment_date: da
 
 def format_currency(amount: float) -> str:
     """Format amount in Indian currency format"""
-    if amount >= 10000000:  # 1 Crore
+    if amount >= 10000000:  
         return f"₹{amount/10000000:.2f} Cr"
-    elif amount >= 100000:  # 1 Lakh
+    elif amount >= 100000:  
         return f"₹{amount/100000:.2f} L"
     else:
         return f"₹{amount:,.2f}"
