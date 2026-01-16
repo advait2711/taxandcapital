@@ -398,14 +398,36 @@ def main():
     with col1:
         st.subheader("📝 Transaction Details")
         
-        # Section Selection - Searchable
+        # Section Selection - Searchable with filter
         section_options = {get_section_display_name(s): s for s in TDS_SECTIONS}
+        
+        # Search/Filter input
+        search_query = st.text_input(
+            "🔍 Search TDS Section",
+            placeholder="Type section number or keyword (e.g., 194C, Contractor, Rent, Interest...)",
+            help="Filter sections by typing section number or description keywords"
+        )
+        
+        # Filter sections based on search query
+        if search_query:
+            filtered_options = {k: v for k, v in section_options.items() 
+                               if search_query.lower() in k.lower()}
+            if not filtered_options:
+                st.warning(f"No sections found matching '{search_query}'. Showing all sections.")
+                filtered_options = section_options
+        else:
+            filtered_options = section_options
+        
+        # Show count of filtered results
+        if search_query and len(filtered_options) < len(section_options):
+            st.caption(f"📋 Showing {len(filtered_options)} of {len(section_options)} sections")
+        
         selected_section_name = st.selectbox(
             "Select TDS Section",
-            options=list(section_options.keys()),
-            help="Search and select the applicable TDS section"
+            options=list(filtered_options.keys()),
+            help="Select the applicable TDS section from filtered list"
         )
-        selected_section = section_options[selected_section_name]
+        selected_section = filtered_options[selected_section_name]
         
         # Display Section Details
         with st.expander("📖 Section Details", expanded=True):
