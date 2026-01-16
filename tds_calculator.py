@@ -150,6 +150,8 @@ class TDSSection:
     has_slabs: bool = False
     slabs: Optional[List[Dict]] = None
     is_property_section: bool = False
+    has_threshold_types: bool = False
+    threshold_types: Optional[List[Dict]] = None
 
 
 # Complete TDS Sections for FY 2025-2026
@@ -165,8 +167,12 @@ TDS_SECTIONS = [
     TDSSection("194BA", "Winnings from online games (From 01-Apr-2023)", None, "-", 30, 30, 30),
     TDSSection("194BA-Sub(2)", "Net Winnings from online games - where net winnings insufficient", None, "-", 30, 30, 30),
     TDSSection("194BB", "Winnings from Horse Race", 10000, "₹10,000", 30, 30, 30),
-    TDSSection("194C", "Payment to Contractors", 100000, "₹1,00,000 (Annual)", 2, 1, 20),
-    TDSSection("194C-Specified", "Payment under Specified agreement", None, "-", 10, 10, 20),
+    TDSSection("194C", "Payment to Contractors", 100000, "₹1,00,000 (Annual)", 2, 1, 20, has_threshold_types=True,
+               threshold_types=[
+                   {"type": "Single Transaction", "threshold": 30000, "threshold_note": "₹30,000 (Single Transaction)"},
+                   {"type": "Annual Aggregate", "threshold": 100000, "threshold_note": "₹1,00,000 (Annual)"}
+               ]),
+    TDSSection("194IC", "Payment under Specified agreement", None, "-", 10, 10, 20),
     TDSSection("194D", "Insurance Commission", 20000, "₹20,000", 10, 2, 20),
     TDSSection("194DA", "Payment in respect of life insurance policy (from 01.10.2014)", 100000, "₹1,00,000", 2, 2, 20, "2% (from 1st Oct 2024)", "2% (from 1st Oct 2024)"),
     TDSSection("194E", "Payment to Non-Resident Sportsmen or Sports Association", None, "-", 20, 20, 20),
@@ -413,6 +419,22 @@ def main():
                 if selected_section.is_property_section:
                     st.info("🏠 Property Section: 30-day due date rule applies")
         
+        # Handle sections with threshold types (like 194C)
+        selected_threshold_type = None
+        effective_threshold = selected_section.threshold
+        effective_threshold_note = selected_section.threshold_note
+        if selected_section.has_threshold_types and selected_section.threshold_types:
+            st.markdown("**Select Threshold Type:**")
+            threshold_type_options = [t["type"] for t in selected_section.threshold_types]
+            selected_threshold_type_name = st.selectbox("Threshold Type", threshold_type_options, label_visibility="collapsed")
+            for t in selected_section.threshold_types:
+                if t["type"] == selected_threshold_type_name:
+                    selected_threshold_type = t
+                    effective_threshold = t["threshold"]
+                    effective_threshold_note = t["threshold_note"]
+                    break
+            st.info(f"📋 Selected: {selected_threshold_type_name} - Threshold: {effective_threshold_note}")
+        
         # Handle sections with slabs
         selected_slab = None
         if selected_section.has_slabs and selected_section.slabs:
@@ -491,7 +513,7 @@ def main():
             st.warning("⚠️ TDS is not applicable for this section and category combination")
         else:
             # Calculate TDS
-            tds_amount, above_threshold = calculate_tds(amount, rate, selected_section.threshold)
+            tds_amount, above_threshold = calculate_tds(amount, rate, effective_threshold)
             
             # Calculate Due Date
             due_date = calculate_due_date(deduction_date, selected_section)
@@ -520,15 +542,15 @@ def main():
                     <tr><td>Category</td><td>{'Company/Firm/Co-op/LA' if 'Company' in category else 'Individual/HUF'}</td></tr>
                     <tr><td>PAN Status</td><td>{'Available' if pan_available else 'Not Available'}</td></tr>
                     <tr><td>Transaction Amount</td><td>{format_indian_number(amount)}</td></tr>
-                    <tr><td>Applicable Threshold</td><td>{selected_section.threshold_note}</td></tr>
+                    <tr><td>Applicable Threshold</td><td>{effective_threshold_note}</td></tr>
                     <tr><td>Applicable TDS Rate</td><td>{rate_display}</td></tr>
                     <tr><td><strong>TDS Amount</strong></td><td><strong>{format_indian_number(tds_amount)}</strong></td></tr>
                 </table>
                 """
                 st.markdown(result_html, unsafe_allow_html=True)
                 
-                if not above_threshold and selected_section.threshold is not None:
-                    st.info(f"ℹ️ Amount is below threshold of {selected_section.threshold_note}. No TDS applicable.")
+                if not above_threshold and effective_threshold is not None:
+                    st.info(f"ℹ️ Amount is below threshold of {effective_threshold_note}. No TDS applicable.")
                 
                 st.markdown('</div>', unsafe_allow_html=True)
             
@@ -627,7 +649,7 @@ def main():
                         category,
                         "Yes" if pan_available else "No",
                         format_indian_number(amount),
-                        selected_section.threshold_note,
+                        effective_threshold_note,
                         rate_display,
                         format_indian_number(tds_amount),
                         deduction_date.strftime('%d-%b-%Y'),
