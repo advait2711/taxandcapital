@@ -423,6 +423,7 @@ def main():
         selected_threshold_type = None
         effective_threshold = selected_section.threshold
         effective_threshold_note = selected_section.threshold_note
+        annual_threshold_exceeded = False
         if selected_section.has_threshold_types and selected_section.threshold_types:
             st.markdown("**Select Threshold Type:**")
             threshold_type_options = [t["type"] for t in selected_section.threshold_types]
@@ -433,7 +434,22 @@ def main():
                     effective_threshold = t["threshold"]
                     effective_threshold_note = t["threshold_note"]
                     break
-            st.info(f"📋 Selected: {selected_threshold_type_name} - Threshold: {effective_threshold_note}")
+            
+            # For 194C Single Transaction, ask about previous payments exceeding annual limit
+            if selected_section.section == "194C" and selected_threshold_type_name == "Single Transaction":
+                st.markdown("---")
+                annual_threshold_exceeded = st.checkbox(
+                    "Have previous payments to this contractor exceeded ₹1,00,000 (Annual Limit)?",
+                    help="If previous payments have crossed the annual threshold of ₹1,00,000, TDS is applicable on all subsequent payments regardless of the single transaction amount."
+                )
+                if annual_threshold_exceeded:
+                    effective_threshold = 0  # TDS applicable on any amount
+                    effective_threshold_note = "₹0 (Annual limit already exceeded)"
+                    st.warning("⚠️ Since annual threshold of ₹1,00,000 has been exceeded, TDS is applicable on this transaction regardless of the amount.")
+                else:
+                    st.info(f"📋 Selected: {selected_threshold_type_name} - Threshold: {effective_threshold_note}")
+            else:
+                st.info(f"📋 Selected: {selected_threshold_type_name} - Threshold: {effective_threshold_note}")
         
         # Handle sections with slabs
         selected_slab = None
