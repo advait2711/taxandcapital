@@ -28,6 +28,9 @@ class TDSSection:
     is_property_section: bool = False
     has_threshold_types: bool = False
     threshold_types: Optional[List[Dict]] = None
+    has_conditions: bool = False
+    conditions: Optional[List[Dict]] = None
+    tds_on_excess: bool = False  # If True, TDS is calculated only on amount exceeding threshold
 
 
 # Complete TDS Sections for FY 2025-2026
@@ -50,16 +53,16 @@ TDS_SECTIONS = [
                ]),
     TDSSection("194IC", "Payment under Specified agreement", None, "-", 10, 10, 20),
     TDSSection("194D", "Insurance Commission", 20000, "₹20,000", 10, 2, 20),
-    TDSSection("194DA", "Payment in respect of life insurance policy (from 01.10.2014)", 100000, "₹1,00,000", 2, 2, 20, "2% (from 1st Oct 2024)", "2% (from 1st Oct 2024)"),
+    TDSSection("194DA", "Payment in respect of life insurance policy (from 01.10.2014)", 100000, "₹1,00,000", 2, 2, 20),
     TDSSection("194E", "Payment to Non-Resident Sportsmen or Sports Association", None, "-", 20, 20, 20),
     TDSSection("194EE", "Payments out of deposits under NSS", 2500, "₹2,500", 10, 10, 20),
-    TDSSection("194F", "Repurchase Units by MFs", None, "-", 20, 20, 20, "20% (upto 30th Sep 2024)", "20% (upto 30th Sep 2024)"),
-    TDSSection("194G", "Commission - Lottery", 20000, "₹20,000", 2, 2, 20, "2% (from 1st Oct 2024)", "2% (from 1st Oct 2024)"),
-    TDSSection("194H", "Commission / Brokerage", 20000, "₹20,000", 2, 2, 20, "2% (from 1st Oct 2024)", "2% (from 1st Oct 2024)"),
+    TDSSection("194F", "Repurchase Units by MFs", None, "-", 20, 20, 20),
+    TDSSection("194G", "Commission - Lottery", 20000, "₹20,000", 2, 2, 20),
+    TDSSection("194H", "Commission / Brokerage", 20000, "₹20,000", 2, 2, 20),
     TDSSection("194I", "Rent - Land and Building/Furniture/Fittings", 50000, "₹50,000 (Per month)", 10, 10, 20),
     TDSSection("194I(a)", "Rent - Plant/Machinery/Equipment", 50000, "₹50,000 (Per month)", 2, 2, 20),
     TDSSection("194IA", "Transfer of certain immovable property other than agriculture land", 5000000, "₹50,00,000", 1, 1, 20, is_property_section=True),
-    TDSSection("194IB", "Payment of rent by certain individuals or Hindu undivided family", 50000, "₹50,000", 2, 2, 20, "2% (from 1st Oct 2024)", "2% (from 1st Oct 2024)", is_property_section=True),
+    TDSSection("194IB", "Payment of rent by certain individuals or Hindu undivided family", 50000, "₹50,000", 2, 2, 20, is_property_section=True),
     TDSSection("194J(a)", "Fees for Technical Services", 50000, "₹50,000", 2, 2, 20),
     TDSSection("194J(b)", "Fees for Professional services or royalty etc.", 50000, "₹50,000", 10, 10, 20),
     TDSSection("194K", "Payment of Dividend by Mutual Funds (From 01 Apr 2020)", 10000, "₹10,000", 10, 10, 20),
@@ -69,18 +72,35 @@ TDS_SECTIONS = [
     TDSSection("194LBA(b)", "Certain Income in the form of dividend from units of a business trust to a resident unit holder", None, "-", 10, 10, 20),
     TDSSection("194LBA(1)", "Payment of the nature referred to in Section 10(23FC)(a)", None, "-", 5, 5, 20),
     TDSSection("194LBA(2)", "Payment of the nature referred to in Section 10(23FC)(b)", None, "-", 10, 10, 20),
-    TDSSection("194LBA(3)", "Payment of the nature referred to in section 10(23FCA) by business trust to unit holders", None, "-", 30, 30, 35, 
-               "35% - Non Residents Company, 30% - Non Residents other than companies", "30%"),
+    TDSSection("194LBA(3)", "Payment of the nature referred to in section 10(23FCA) by business trust to unit holders", None, "-", 30, 30, 35,
+               has_conditions=True,
+               conditions=[
+                   {"condition": "Non-Resident Company", "rate": 35},
+                   {"condition": "Non-Resident (Other than Company)", "rate": 30},
+               ]),
     TDSSection("194LBB", "Income in respect of units of investment fund", None, "-", 10, 10, 35,
-               "35% - Non Residents Company, 30% - Non Residents other than companies, 10% - Residents",
-               "10% - Residents, 30% - Non Resident"),
+               has_conditions=True,
+               conditions=[
+                   {"condition": "Resident", "rate": 10},
+                   {"condition": "Non-Resident Company", "rate": 35},
+                   {"condition": "Non-Resident (Other than Company)", "rate": 30},
+               ]),
     TDSSection("194LBC", "Income in respect of investment in securitisation trust", None, "-", 10, 10, 35,
-               "35% - Non Residents Company, 30% - Non Residents other than companies, 10% - Residents", "10%"),
+               has_conditions=True,
+               conditions=[
+                   {"condition": "Resident", "rate": 10},
+                   {"condition": "Non-Resident Company", "rate": 35},
+                   {"condition": "Non-Resident (Other than Company)", "rate": 30},
+               ]),
     TDSSection("194LC", "Income by way of interest by an Indian specified company to a non-resident/foreign company", None, "-", 5, 5, 20,
-               "5% or 4% or 9% (see conditions)", "5% or 4% or 9% (see conditions)"),
+               has_conditions=True,
+               conditions=[
+                   {"condition": "Long-term Bond/Rupee Denominated Bond listed on IFSC stock exchange", "rate": 4},
+                   {"condition": "Bonds issued after 01-07-2023 listed only on IFSC exchange", "rate": 9},
+                   {"condition": "Other cases (standard rate)", "rate": 5},
+               ]),
     TDSSection("194LD", "Interest on certain bonds and govt. Securities (from 01-06-2013)", None, "-", 5, 5, 20),
-    TDSSection("194M", "Payment of certain sums by certain individuals or Hindu undivided family", 5000000, "₹50,00,000", 2, 2, 20, 
-               "2% (from 1st Oct 2024)", "2% (from 1st Oct 2024)"),
+    TDSSection("194M", "Payment of certain sums by certain individuals or Hindu undivided family", 5000000, "₹50,00,000", 2, 2, 20),
     TDSSection("194N", "Payment of certain amounts in cash", 10000000, "Withdrawal in Excess of Rs. 1 Cr.", 2, 2, 20),
     TDSSection("194NC", "Payment of certain amounts in cash to co-operative societies not covered by first proviso", 30000000, "Withdrawal in Excess of Rs. 3 Cr. for Co-operative Society", 2, 2, 20),
     TDSSection("194NF", "Payment of certain amounts in cash to non-filers", None, "Slabs", None, None, 0, has_slabs=True,
@@ -93,10 +113,9 @@ TDS_SECTIONS = [
                    {"description": "Exceed 20 Lacs but does not exceed 3 Cr", "rate": 2},
                    {"description": "Withdrawal in Excess of Rs. 3 Cr", "rate": 5}
                ]),
-    TDSSection("194O", "TDS on e-commerce participants (From 01-Oct-2020)", 500000, "₹5,00,000 (Individual/HUF)", 0.1, 0.1, 5,
-               "0.1% (from 1st Oct 2024)", "0.1% (from 1st Oct 2024)"),
+    TDSSection("194O", "TDS on e-commerce participants (From 01-Oct-2020)", 500000, "₹5,00,000 (Individual/HUF)", 0.1, 0.1, 5),
     TDSSection("194P", "TDS in case of Specified Senior Citizen", None, "-", None, None, 0, "Not Applicable", "Rates in Force"),
-    TDSSection("194Q", "TDS on Purchase of Goods exceeding Rs. 50 Lakhs (From 01-July-2021)", 5000000, "In Excess of Rs. 50 Lakhs", 0.1, 0.1, 5),
+    TDSSection("194Q", "TDS on Purchase of Goods exceeding Rs. 50 Lakhs (From 01-July-2021)", 5000000, "In Excess of Rs. 50 Lakhs", 0.1, 0.1, 5, tds_on_excess=True),
     TDSSection("194R", "TDS in case any benefit or perquisite (arising from business or profession)", 20000, "₹20,000", 10, 10, 20),
     TDSSection("194R-proviso", "TDS in case any Benefits or perquisites - where benefit is provided in kind or insufficient cash", 20000, "₹20,000", 10, 10, 20),
     TDSSection("194S", "TDS on payment on transfer of Virtual Digital Asset (From 01-July-2022)", 10000, "₹10,000", 1, 1, 20),
@@ -135,7 +154,7 @@ def get_applicable_rate(section: TDSSection, category: str, pan_available: bool)
         return section.individual_rate, f"{section.individual_rate}% {note}".strip()
 
 
-def calculate_tds(amount: float, rate: Optional[float], threshold: Optional[float]) -> Tuple[float, bool]:
+def calculate_tds(amount: float, rate: Optional[float], threshold: Optional[float], tds_on_excess: bool = False) -> Tuple[float, bool]:
     """Calculate TDS amount"""
     if rate is None:
         return 0, False
@@ -144,7 +163,15 @@ def calculate_tds(amount: float, rate: Optional[float], threshold: Optional[floa
     if threshold is not None and amount < threshold:
         return 0, False  
     
-    tds_amount = amount * (rate / 100)
+    # Calculate taxable amount
+    if tds_on_excess and threshold is not None:
+        # TDS only on amount exceeding threshold (e.g., 194Q)
+        taxable_amount = amount - threshold
+    else:
+        # TDS on full amount
+        taxable_amount = amount
+    
+    tds_amount = taxable_amount * (rate / 100)
     return round(tds_amount, 2), True
 
 
@@ -190,7 +217,7 @@ def calculate_interest(tds_amount: float, deduction_date: date, payment_date: da
     deduction_month = deduction_date.month + (deduction_date.year * 12)
     payment_month = payment_date.month + (payment_date.year * 12)
     
-    months = payment_month - deduction_month 
+    months = payment_month - deduction_month + 1
     
     # Interest @ 1.5% per month
     interest = tds_amount * 0.015 * months
@@ -228,7 +255,8 @@ def calculate_full_tds(
     payment_date: date,
     threshold_type: Optional[str] = None,
     annual_threshold_exceeded: bool = False,
-    selected_slab: Optional[str] = None
+    selected_slab: Optional[str] = None,
+    selected_condition: Optional[str] = None
 ) -> Dict:
     """
     Calculate complete TDS details for a transaction.
@@ -249,6 +277,14 @@ def calculate_full_tds(
                 rate_display = f"{slab['rate']}%"
                 break
     
+    # Handle sections with conditions
+    if section.has_conditions and section.conditions and selected_condition:
+        for cond in section.conditions:
+            if cond["condition"] == selected_condition:
+                rate = cond["rate"]
+                rate_display = f"{cond['rate']}%"
+                break
+    
     # Determine effective threshold
     effective_threshold = section.threshold
     effective_threshold_note = section.threshold_note
@@ -266,7 +302,7 @@ def calculate_full_tds(
             effective_threshold_note = "₹0 (Annual limit already exceeded)"
     
     # Calculate TDS
-    tds_amount, above_threshold = calculate_tds(amount, rate, effective_threshold)
+    tds_amount, above_threshold = calculate_tds(amount, rate, effective_threshold, section.tds_on_excess)
     
     # Calculate Due Date
     due_date = calculate_due_date(deduction_date, section)
@@ -308,7 +344,9 @@ def calculate_full_tds(
         "has_threshold_types": section.has_threshold_types,
         "threshold_types": section.threshold_types,
         "has_slabs": section.has_slabs,
-        "slabs": section.slabs
+        "slabs": section.slabs,
+        "has_conditions": section.has_conditions,
+        "conditions": section.conditions
     }
 
 
@@ -329,6 +367,8 @@ def get_all_sections_list() -> List[Dict]:
             "slabs": section.slabs,
             "is_property_section": section.is_property_section,
             "has_threshold_types": section.has_threshold_types,
-            "threshold_types": section.threshold_types
+            "threshold_types": section.threshold_types,
+            "has_conditions": section.has_conditions,
+            "conditions": section.conditions
         })
     return sections
