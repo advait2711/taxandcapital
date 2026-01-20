@@ -102,7 +102,7 @@ def generate_excel_report(entity_name: str, pan_number: str, results: List[Dict]
         # Transaction Details
         details = [
             ("TDS Section", result.get('section', '')),
-            ("Description", result.get('section_description', '')[:50] + "..." if len(result.get('section_description', '')) > 50 else result.get('section_description', '')),
+            ("Description", result.get('section_description', '')),
             ("Category", result.get('category_short', '')),
             ("PAN Status", "Available" if result.get('pan_available') else "Not Available"),
             ("Transaction Amount", result.get('amount_formatted', '')),
