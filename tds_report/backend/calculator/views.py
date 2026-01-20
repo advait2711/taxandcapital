@@ -48,7 +48,8 @@ def calculate_tds(request):
             payment_date=payment_date,
             threshold_type=txn.get('threshold_type'),
             annual_threshold_exceeded=txn.get('annual_threshold_exceeded', False),
-            selected_slab=txn.get('selected_slab')
+            selected_slab=txn.get('selected_slab'),
+            selected_condition=txn.get('selected_condition')
         )
         result['transaction_number'] = idx
         results.append(result)
