@@ -4,6 +4,12 @@ from datetime import datetime
 
 class TransactionSerializer(serializers.Serializer):
     """Serializer for a single transaction"""
+    # Deductee details
+    deductee_name = serializers.CharField(max_length=200)
+    deductee_pan = serializers.CharField(max_length=10, required=False, allow_blank=True, allow_null=True)
+    no_pan_available = serializers.BooleanField(required=False, default=False)
+    
+    # Transaction details
     section_code = serializers.CharField(max_length=20)
     amount = serializers.FloatField(min_value=0)
     category = serializers.ChoiceField(choices=[
@@ -16,25 +22,36 @@ class TransactionSerializer(serializers.Serializer):
     threshold_type = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
     annual_threshold_exceeded = serializers.BooleanField(required=False, default=False)
     selected_slab = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
+    selected_condition = serializers.CharField(max_length=100, required=False, allow_blank=True, allow_null=True)
+    threshold_exceeded_before = serializers.BooleanField(required=False, default=False)
 
 
-class EntitySerializer(serializers.Serializer):
-    """Serializer for entity details"""
+class DeductorSerializer(serializers.Serializer):
+    """Serializer for deductor details"""
+    deductor_name = serializers.CharField(max_length=200)
+    tan_number = serializers.CharField(max_length=10)
     entity_name = serializers.CharField(max_length=200)
-    pan_number = serializers.CharField(max_length=10)
     
-    def validate_pan_number(self, value):
-        """Validate PAN format: 5 letters + 4 digits + 1 letter"""
+    def validate_tan_number(self, value):
+        """
+        Validate TAN format:
+        - First 3 characters (A-Z): Jurisdiction code
+        - 4th character (A-Z): Initial of the deductor
+        - Next 5 characters (0-9): Numeric
+        - Last character (A-Z): Alphabet
+        """
         import re
         value = value.upper()
-        if not re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]$', value):
-            raise serializers.ValidationError("Invalid PAN format. Expected: ABCDE1234F")
+        if not re.match(r'^[A-Z]{3}[A-Z][0-9]{5}[A-Z]$', value):
+            raise serializers.ValidationError(
+                "Invalid TAN format. Expected: ABCD12345E (3 letters + 1 letter + 5 digits + 1 letter)"
+            )
         return value
 
 
 class CalculateRequestSerializer(serializers.Serializer):
     """Serializer for TDS calculation request"""
-    entity = EntitySerializer()
+    deductor = DeductorSerializer()
     transactions = TransactionSerializer(many=True)
     
     def validate_transactions(self, value):
@@ -45,5 +62,5 @@ class CalculateRequestSerializer(serializers.Serializer):
 
 class ExcelRequestSerializer(serializers.Serializer):
     """Serializer for Excel generation request"""
-    entity = EntitySerializer()
+    deductor = DeductorSerializer()
     results = serializers.ListField(child=serializers.DictField())
