@@ -12,6 +12,48 @@ from dataclasses import dataclass
 from typing import Optional, List, Dict, Tuple
 
 
+# PAN 4th character to category mapping
+PAN_CATEGORY_MAP = {
+    'P': 'Individual / HUF',      # Individual (Person)
+    'H': 'Individual / HUF',      # Hindu Undivided Family
+    'C': 'Company / Firm / Co-operative Society / Local Authority',  # Company
+    'F': 'Company / Firm / Co-operative Society / Local Authority',  # Firm
+    'G': 'Company / Firm / Co-operative Society / Local Authority',  # Government
+    'L': 'Company / Firm / Co-operative Society / Local Authority',  # Local Authority
+    'J': 'Company / Firm / Co-operative Society / Local Authority',  # Artificial Judicial Person
+    'A': 'Company / Firm / Co-operative Society / Local Authority',  # Association of Persons
+    'B': 'Company / Firm / Co-operative Society / Local Authority',  # Body of Individuals
+    'T': 'Company / Firm / Co-operative Society / Local Authority',  # Trust (AOP)
+}
+
+
+def detect_category_from_pan(pan: str) -> Optional[str]:
+    """
+    Detect deductee category from PAN's 4th character.
+    Returns None if PAN is invalid or not provided.
+    """
+    if not pan or len(pan) < 4:
+        return None
+    
+    fourth_char = pan[3].upper()
+    return PAN_CATEGORY_MAP.get(fourth_char)
+
+
+def validate_pan_format(pan: str) -> bool:
+    """
+    Validate PAN format:
+    - First 3 characters (A-Z): Alphabetical
+    - 4th character (A-Z): Taxpayer category
+    - 5th character (A-Z): First letter of surname/entity name
+    - Next 4 characters (0-9): Numeric
+    - Last character (A-Z): Alphabetical
+    """
+    import re
+    if not pan:
+        return False
+    return bool(re.match(r'^[A-Z]{5}[0-9]{4}[A-Z]$', pan.upper()))
+
+
 @dataclass
 class TDSSection:
     section: str
@@ -30,7 +72,7 @@ class TDSSection:
     threshold_types: Optional[List[Dict]] = None
     has_conditions: bool = False
     conditions: Optional[List[Dict]] = None
-    tds_on_excess: bool = False  # If True, TDS is calculated only on amount exceeding threshold
+    tds_on_excess: bool = False  
 
 
 # Complete TDS Sections for FY 2025-2026
@@ -101,8 +143,8 @@ TDS_SECTIONS = [
                ]),
     TDSSection("194LD", "Interest on certain bonds and govt. Securities (from 01-06-2013)", None, "-", 5, 5, 20),
     TDSSection("194M", "Payment of certain sums by certain individuals or Hindu undivided family", 5000000, "₹50,00,000", 2, 2, 20),
-    TDSSection("194N", "Payment of certain amounts in cash", 10000000, "Withdrawal in Excess of Rs. 1 Cr.", 2, 2, 20),
-    TDSSection("194NC", "Payment of certain amounts in cash to co-operative societies not covered by first proviso", 30000000, "Withdrawal in Excess of Rs. 3 Cr. for Co-operative Society", 2, 2, 20),
+    TDSSection("194N", "Payment of certain amounts in cash", 10000000, "Withdrawal in Excess of Rs. 1 Cr.", 2, 2, 20, tds_on_excess=True),
+    TDSSection("194NC", "Payment of certain amounts in cash to co-operative societies not covered by first proviso", 30000000, "Withdrawal in Excess of Rs. 3 Cr. for Co-operative Society", 2, 2, 20, tds_on_excess=True),
     TDSSection("194NF", "Payment of certain amounts in cash to non-filers", None, "Slabs", None, None, 0, has_slabs=True,
                slabs=[
                    {"description": "Exceed 20 Lacs but does not exceed 1 Cr", "rate": 2},
@@ -256,7 +298,8 @@ def calculate_full_tds(
     threshold_type: Optional[str] = None,
     annual_threshold_exceeded: bool = False,
     selected_slab: Optional[str] = None,
-    selected_condition: Optional[str] = None
+    selected_condition: Optional[str] = None,
+    threshold_exceeded_before: bool = False
 ) -> Dict:
     """
     Calculate complete TDS details for a transaction.
@@ -295,14 +338,16 @@ def calculate_full_tds(
                 effective_threshold = t["threshold"]
                 effective_threshold_note = t["threshold_note"]
                 break
-        
-        # For 194C Single Transaction with annual threshold exceeded
-        if section.section == "194C" and threshold_type == "Single Transaction" and annual_threshold_exceeded:
-            effective_threshold = 0
-            effective_threshold_note = "₹0 (Annual limit already exceeded)"
+    
+    # For section 194Q: If threshold was exceeded before this payment, TDS applies on full amount
+    apply_tds_on_excess = section.tds_on_excess
+    if section.section == "194Q" and threshold_exceeded_before:
+        # Threshold already exceeded before this payment, so TDS on full amount
+        apply_tds_on_excess = False
+        effective_threshold = None  # No threshold check needed
     
     # Calculate TDS
-    tds_amount, above_threshold = calculate_tds(amount, rate, effective_threshold, section.tds_on_excess)
+    tds_amount, above_threshold = calculate_tds(amount, rate, effective_threshold, apply_tds_on_excess)
     
     # Calculate Due Date
     due_date = calculate_due_date(deduction_date, section)
